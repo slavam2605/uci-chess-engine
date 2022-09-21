@@ -17,9 +17,11 @@ std::vector<pair<chess_move, size_t>> perft_utils::perft(const string& fen, int 
 }
 
 size_t perft_utils::perft_inner(const game_state& state, int depth) { // NOLINT(misc-no-recursion)
+    if (depth == 0) return 1;
     size_t result = 0;
     move_list moves;
     chess_move_generator::generate_all_moves(moves, state, state.side);
+    if (depth == 1) return moves.size();
     for (const auto& move: moves) {
         game_state new_state(state);
         new_state.apply_move(move);
@@ -27,7 +29,7 @@ size_t perft_utils::perft_inner(const game_state& state, int depth) { // NOLINT(
             result += perft_inner(new_state, depth - 1);
         } else {
             move_list new_moves;
-            chess_move_generator::generate_all_moves(new_moves, state, state.side);
+            chess_move_generator::generate_all_moves(new_moves, new_state, new_state.side);
             result += new_moves.size();
         }
     }
