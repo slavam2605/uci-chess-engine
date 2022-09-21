@@ -1,0 +1,13 @@
+cmake_minimum_required(VERSION 3.23)
+project(ChessUCIEngine)
+
+set(CMAKE_CXX_STANDARD 20)
+#message("Debug: ${CMAKE_CXX_FLAGS_DEBUG}")
+#message("Release: ${CMAKE_CXX_FLAGS_RELEASE}")
+set(CMAKE_CXX_FLAGS_DEBUG "/Zi /O2 /Ob2 /arch:AVX2")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /GL /arch:AVX2")
+add_link_options("/LTCG")
+
+add_executable(ChessUCIEngine main.cpp process_interaction.cpp process_interaction.h blocking_queue.h uci_interactive.cpp uci_interactive.h uci_response.cpp uci_response.h utils.h gui_chess_move.cpp gui_chess_move.h board_position.cpp board_position.h chess_utils.h engine/bitboard.h engine/static_evaluator.h engine/static_evaluator.cpp engine/dynamic_evaluator.h engine/dynamic_evaluator.cpp engine/uci_interface.h engine/uci_interface.cpp engine/game_state.cpp engine/chess_move.cpp engine/zobrist_hash.cpp engine/zobrist_hash.h engine/transposition_table.cpp engine/transposition_table.h engine/move_list.cpp engine/move_list.h engine/move_list_pool.cpp engine/move_list_pool.h engine/magic/magic_generator.cpp engine/magic/magic_generator.h engine/magic/magic_numbers.h engine/killer_table.cpp engine/killer_table.h)
+add_executable(Engine engine/bitboard.h engine/uci_interface_main.cpp engine/game_state.cpp engine/game_state.h engine/chess_move.cpp engine/chess_move.h engine/move_masks.h engine/chess_move_generator.h engine/chess_utils.h engine/legal_move_mask.h engine/static_evaluator.h engine/static_evaluator.cpp engine/dynamic_evaluator.h engine/dynamic_evaluator.cpp engine/uci_interface.h engine/uci_interface.cpp engine/zobrist_hash.cpp engine/zobrist_hash.h engine/transposition_table.cpp engine/transposition_table.h engine/move_list.cpp engine/move_list.h engine/move_list_pool.cpp engine/move_list_pool.h engine/magic/magic_generator.cpp engine/magic/magic_generator.h engine/magic/magic_numbers.h engine/debug_tools.cpp engine/debug_tools.h engine/killer_table.cpp engine/killer_table.h)
+add_executable(Tests test/engine_test.cpp engine/bitboard.h engine/game_state.cpp engine/game_state.h engine/chess_move.cpp engine/chess_move.h engine/move_masks.h engine/chess_move_generator.h engine/chess_utils.h engine/legal_move_mask.h engine/static_evaluator.h engine/static_evaluator.cpp engine/dynamic_evaluator.h engine/dynamic_evaluator.cpp engine/uci_interface.h engine/uci_interface.cpp engine/zobrist_hash.cpp engine/zobrist_hash.h engine/transposition_table.cpp engine/transposition_table.h engine/move_list.cpp engine/move_list.h engine/move_list_pool.cpp engine/move_list_pool.h engine/magic/magic_numbers.h engine/killer_table.cpp engine/killer_table.h test/perft_utils.cpp test/perft_utils.h engine/magic/magic_generator.cpp engine/magic/magic_generator.h)
