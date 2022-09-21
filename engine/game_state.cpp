@@ -37,7 +37,7 @@ game_state::game_state(const std::string& fen) {
         en_passant = Empty;
     } else {
         int col = en_passant_square[0] - 'a';
-        int row = en_passant_square[1] - '0';
+        int row = en_passant_square[1] - '1';
         en_passant = row * 8 + col;
     }
     halfmove_clock = stoi(halfmove_clock_s);
