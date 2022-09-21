@@ -83,10 +83,20 @@ namespace legal_move_mask {
         return result;
     }
 
-    inline bitboard generate_magic_rook_mask(const game_state& state, uint8_t position, uint8_t side, bool only_captures) {
-        auto block = state.all & magic_generator::rook_mask[position];
+    inline bitboard magic_rook_mask_impl(bitboard occ, uint8_t position, uint8_t side) {
+        auto block = occ & magic_generator::rook_mask[position];
         auto index = (block * magic::rook_magic[position]) >> (64 - magic::rook_shift[position]);
-        auto attack = magic_generator::rook_attack_masks[position][index];
+        return magic_generator::rook_attack_masks[position][index];
+    }
+
+    inline bitboard magic_bishop_mask_impl(bitboard occ, uint8_t position, uint8_t side) {
+        auto block = occ & magic_generator::bishop_mask[position];
+        auto index = (block * magic::bishop_magic[position]) >> (64 - magic::bishop_shift[position]);
+        return magic_generator::bishop_attack_masks[position][index];
+    }
+    
+    inline bitboard generate_magic_rook_mask(const game_state& state, uint8_t position, uint8_t side, bool only_captures) {
+        auto attack = magic_rook_mask_impl(state.all, position, side);
         if (only_captures) {
             return attack & state.side_board[chess::inverse_color(side)];
         }
@@ -94,9 +104,7 @@ namespace legal_move_mask {
     }
 
     inline bitboard generate_magic_bishop_mask(const game_state& state, uint8_t position, uint8_t side, bool only_captures) {
-        auto block = state.all & magic_generator::bishop_mask[position];
-        auto index = (block * magic::bishop_magic[position]) >> (64 - magic::bishop_shift[position]);
-        auto attack = magic_generator::bishop_attack_masks[position][index];
+        auto attack = magic_bishop_mask_impl(state.all, position, side);
         if (only_captures) {
             return attack & state.side_board[chess::inverse_color(side)];
         }
@@ -134,6 +142,18 @@ namespace legal_move_mask {
         auto rook = generate_figure_mask<chess::Rook>(state, position, side, only_captures);
         auto bishop = generate_figure_mask<chess::Bishop>(state, position, side, only_captures);
         return rook | bishop;
+    }
+    
+    inline bitboard xray_bishop_attacks(const game_state& state, bitboard blockers, uint8_t position, uint8_t side) {
+        auto attacks = magic_bishop_mask_impl(state.all, position, side);
+        blockers &= attacks;
+        return attacks ^ magic_bishop_mask_impl(state.all ^ blockers, position, side);
+    }
+
+    inline bitboard xray_rook_attacks(const game_state& state, bitboard blockers, uint8_t position, uint8_t side) {
+        auto attacks = magic_rook_mask_impl(state.all, position, side);
+        blockers &= attacks;
+        return attacks ^ magic_rook_mask_impl(state.all ^ blockers, position, side);
     }
 }
 

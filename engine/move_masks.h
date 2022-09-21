@@ -225,4 +225,36 @@ namespace pawn_shield_mask {
     static constexpr std::array<bitboard, 64> black_mask = calc_black_mask();
 }
 
+namespace in_between_mask {
+    static consteval bitboard calc_in_between(uint8_t sq1, uint8_t sq2) {
+        const auto m1   = uint64_t(-1);
+        const auto a2a7 = 0x0001010101010100ULL;
+        const auto b2g7 = 0x0040201008040200ULL;
+        const auto h1b7 = 0x0002040810204080ULL;
+        uint64_t btwn, line, rank, file;
+
+        btwn  = (m1 << sq1) ^ (m1 << sq2);
+        file  =   (sq2 & 7) - (sq1   & 7);
+        rank  =  ((sq2 | 7) -  sq1) >> 3 ;
+        line  =      (   (file  &  7) - 1) & a2a7;
+        line += 2 * ((   (rank  &  7) - 1) >> 58);
+        line += (((rank - file) & 15) - 1) & b2g7;
+        line += (((rank + file) & 15) - 1) & h1b7;
+        line *= btwn & -btwn;
+        return line & btwn;
+    }
+    
+    static consteval std::array<std::array<bitboard, 64>, 64> calc_mask() {
+        std::array<std::array<bitboard, 64>, 64> result{};
+        for (uint8_t from = 0; from < 64; from++) {
+            for (uint8_t to = 0; to < 64; to++) {
+                result[from][to] = calc_in_between(from, to);
+            }
+        }
+        return result;
+    }
+    
+    static constexpr std::array<std::array<bitboard, 64>, 64> mask = calc_mask();
+}
+
 #endif //CHESSUCIENGINE_MOVE_MASKS_H
