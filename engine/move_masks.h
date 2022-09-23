@@ -257,4 +257,46 @@ namespace in_between_mask {
     static constexpr std::array<std::array<bitboard, 64>, 64> mask = calc_mask();
 }
 
+namespace line_masks {
+    static consteval bitboard main_diagonal(int diff) {
+        bitboard result = 0;
+        for (uint8_t a = 0; a < 64; a++) {
+            int row = a / 8;
+            int col = a % 8;
+            if (row - col == diff) set_1(result, a);
+        }
+        return result;
+    }
+
+    static consteval bitboard back_diagonal(int sum) {
+        bitboard result = 0;
+        for (uint8_t a = 0; a < 64; a++) {
+            int row = a / 8;
+            int col = a % 8;
+            if (row + col == sum) set_1(result, a);
+        }
+        return result;
+    }
+    
+    static consteval std::array<std::array<bitboard, 64>, 64> calc_mask() {
+        std::array<std::array<bitboard, 64>, 64> result{};
+        for (uint8_t a = 0; a < 64; a++) {
+            for (uint8_t b = 0; b < 64; b++) {
+                if (a == b) continue;
+                int a_row = a / 8;
+                int a_col = a % 8;
+                int b_row = b / 8;
+                int b_col = b % 8;
+                if (a_row == b_row) result[a][b] = util_mask::rows[a_row];
+                if (a_col == b_col) result[a][b] = util_mask::cols[a_col];
+                if (a_row - a_col == b_row - b_col) result[a][b] = main_diagonal(a_row - a_col);
+                if (a_row + a_col == b_row + b_col) result[a][b] = back_diagonal(a_row + a_col);
+            }
+        }
+        return result;
+    }
+    
+    static constexpr std::array<std::array<bitboard, 64>, 64> mask = calc_mask();
+}
+
 #endif //CHESSUCIENGINE_MOVE_MASKS_H

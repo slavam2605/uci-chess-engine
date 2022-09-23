@@ -8,6 +8,7 @@
 #include "chess_utils.h"
 #include "legal_move_mask.h"
 #include "move_list.h"
+#include "bitboard_utils.h"
 
 namespace chess_move_generator {
     using namespace std;
@@ -52,7 +53,7 @@ namespace chess_move_generator {
     
     template <uint8_t Figure>
     inline void generate_moves(move_list& moves, const game_state& state, uint8_t side,
-                               uint8_t from, bitboard mask, bool sure_legal) {
+                               uint8_t from, bitboard mask, bool use_pinned, bitboard pinned, uint8_t king_sq) {
         while (mask) {
             auto to = lsb(mask);
             set_0(mask, to);
@@ -64,26 +65,27 @@ namespace chess_move_generator {
                 }
             }
             chess_move move(from, to, side, Figure, defender_type);
-            if (sure_legal || is_legal(move, state)) {
+            bool legal = use_pinned ? !get_bit(pinned, from) || aligned(from, to, king_sq)
+                                    : is_legal(move, state);
+            if (legal) {
                 moves.push_back(move);
             }
         }
     }
 
     template <uint8_t Figure>
-    inline void generate_figure_moves(move_list& moves, const game_state& state, uint8_t side, bool only_captures, bool use_pinned, bitboard pinned) {
+    inline void generate_figure_moves(move_list& moves, const game_state& state, uint8_t side, bool only_captures, bool use_pinned, bitboard pinned, uint8_t king_sq) {
         auto figure_board = state.board[side][Figure];
         while (figure_board) {
             auto index = lsb(figure_board);
             set_0(figure_board, index);
             auto allowed_moves = legal_move_mask::generate_figure_mask<Figure>(state, index, side, only_captures);
-            bool sure_legal = use_pinned && !get_bit(pinned, index);
-            generate_moves<Figure>(moves, state, side, index, allowed_moves, sure_legal);
+            generate_moves<Figure>(moves, state, side, index, allowed_moves, use_pinned, pinned, king_sq);
         }
     }
 
     inline void generate_pawn_moves(move_list& moves, const game_state& state, uint8_t side, int8_t from_shift, 
-                                    bool is_capture, bitboard mask, chess_move::move_flag flag, bool use_pinned, bitboard pinned) {
+                                    bool is_capture, bitboard mask, chess_move::move_flag flag, bool use_pinned, bitboard pinned, uint8_t king_sq) {
         while (mask) {
             auto to = lsb(mask);
             set_0(mask, to);
@@ -98,8 +100,9 @@ namespace chess_move_generator {
             }
             auto from = static_cast<uint8_t>(to + from_shift);
             chess_move move(from, to, side, chess::Pawn, defender_type, flag);
-            bool sure_legal = use_pinned && !get_bit(pinned, from);
-            if (sure_legal || is_legal(move, state)) {
+            bool legal = use_pinned ? !get_bit(pinned, from) || aligned(from, to, king_sq)
+                                    : is_legal(move, state);
+            if (legal) {
                 if (to < 8 || to > 55) {
                     moves.push_back(chess_move(move, chess_move::move_flag::PromoteToBishop));
                     moves.push_back(chess_move(move, chess_move::move_flag::PromoteToKnight));
@@ -113,17 +116,17 @@ namespace chess_move_generator {
     }
     
     template <>
-    inline void generate_figure_moves<chess::Pawn>(move_list& moves, const game_state& state, uint8_t side, bool only_captures, bool use_pinned, bitboard pinned) {
+    inline void generate_figure_moves<chess::Pawn>(move_list& moves, const game_state& state, uint8_t side, bool only_captures, bool use_pinned, bitboard pinned, uint8_t king_sq) {
         if (!only_captures) {
             auto short_moves = legal_move_mask::generate_short_pawn_mask(state, side);
             auto long_moves = legal_move_mask::generate_long_pawn_mask(state, side);
-            generate_pawn_moves(moves, state, side, side == chess::White ? -8 : 8, false, short_moves, chess_move::move_flag::Default, use_pinned, pinned);
-            generate_pawn_moves(moves, state, side, side == chess::White ? -16 : 16, false, long_moves, chess_move::move_flag::PawnLongMove, use_pinned, pinned);
+            generate_pawn_moves(moves, state, side, side == chess::White ? -8 : 8, false, short_moves, chess_move::move_flag::Default, use_pinned, pinned, king_sq);
+            generate_pawn_moves(moves, state, side, side == chess::White ? -16 : 16, false, long_moves, chess_move::move_flag::PawnLongMove, use_pinned, pinned, king_sq);
         }
         auto left_captures = legal_move_mask::generate_left_pawn_capture_mask(state, side, false);
         auto right_captures = legal_move_mask::generate_right_pawn_capture_mask(state, side, false);
-        generate_pawn_moves(moves, state, side, side == chess::White ? -7 : 9, true, left_captures, chess_move::move_flag::Default, use_pinned, pinned);
-        generate_pawn_moves(moves, state, side, side == chess::White ? -9 : 7, true, right_captures, chess_move::move_flag::Default, use_pinned, pinned);
+        generate_pawn_moves(moves, state, side, side == chess::White ? -7 : 9, true, left_captures, chess_move::move_flag::Default, use_pinned, pinned, king_sq);
+        generate_pawn_moves(moves, state, side, side == chess::White ? -9 : 7, true, right_captures, chess_move::move_flag::Default, use_pinned, pinned, king_sq);
     }
     
     inline void generate_en_passant_moves(move_list& moves, const game_state& state, uint8_t side) {
@@ -195,12 +198,12 @@ namespace chess_move_generator {
         auto is_non_sliding_check = is_check && in_danger<true>(state, king_position, side);
         auto pinned = is_check ? 0 : get_absolute_pinned(state, side);
 
-        generate_figure_moves<chess::Pawn>(moves, state, side, is_non_sliding_check || only_captures, !is_check, pinned);
-        generate_figure_moves<chess::Knight>(moves, state, side, is_non_sliding_check || only_captures, !is_check, pinned);
-        generate_figure_moves<chess::Rook>(moves, state, side, is_non_sliding_check || only_captures, !is_check, pinned);
-        generate_figure_moves<chess::Bishop>(moves, state, side, is_non_sliding_check || only_captures, !is_check, pinned);
-        generate_figure_moves<chess::Queen>(moves, state, side, is_non_sliding_check || only_captures, !is_check, pinned);
-        generate_figure_moves<chess::King>(moves, state, side, only_captures, false, 0);
+        generate_figure_moves<chess::Pawn>(moves, state, side, is_non_sliding_check || only_captures, !is_check, pinned, king_position);
+        generate_figure_moves<chess::Knight>(moves, state, side, is_non_sliding_check || only_captures, !is_check, pinned, king_position);
+        generate_figure_moves<chess::Rook>(moves, state, side, is_non_sliding_check || only_captures, !is_check, pinned, king_position);
+        generate_figure_moves<chess::Bishop>(moves, state, side, is_non_sliding_check || only_captures, !is_check, pinned, king_position);
+        generate_figure_moves<chess::Queen>(moves, state, side, is_non_sliding_check || only_captures, !is_check, pinned, king_position);
+        generate_figure_moves<chess::King>(moves, state, side, only_captures, false, 0, king_position);
         generate_en_passant_moves(moves, state, side);
         if (!is_check && !only_captures) {
             generate_castling_moves(moves, state, side);
