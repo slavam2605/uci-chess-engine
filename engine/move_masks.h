@@ -143,6 +143,29 @@ namespace slider_mask {
     static constexpr std::array<std::array<bitboard, 8>, 64> mask = calc_mask();
 };
 
+namespace pawn_masks {
+    static consteval std::array<bitboard, 64> calc_mask(bool is_white) {
+        std::array<bitboard, 64> result{};
+        for (uint8_t sq = 0; sq < 64; sq++) {
+            auto sq_col = sq % 8;
+            auto sq_row = sq / 8;
+            if (is_white) {
+                if (sq_row == 7) continue;
+                if (sq_col > 0) result[sq] |= 1ULL << (sq + 7);
+                if (sq_col < 7) result[sq] |= 1ULL << (sq + 9);
+            } else {
+                if (sq_row == 0) continue;
+                if (sq_col > 0) result[sq] |= 1ULL << (sq - 9);
+                if (sq_col < 7) result[sq] |= 1ULL << (sq - 7);
+            }
+        }
+        return result;
+    }
+    
+    static constexpr std::array<bitboard, 64> white_mask = calc_mask(true);
+    static constexpr std::array<bitboard, 64> black_mask = calc_mask(false);
+}
+
 namespace passed_pawn_masks {
     static consteval std::array<bitboard, 64> calc_white_passed_pawn_masks() {
         std::array<bitboard, 64> masks{};

@@ -40,7 +40,7 @@ int32_t static_evaluator::mobility(const game_state& state) {
         while (board_copy[side][chess::figure]) {\
             uint8_t index = lsb(board_copy[side][chess::figure]);\
             set_0(board_copy[side][chess::figure], index);\
-            auto mask = legal_move_mask::generate_figure_mask<chess::figure>(state, index, side, false);\
+            auto mask = legal_move_mask::generate_figure_mask<chess::figure>(index, state.all);\
             result += sign[side] * mobility::figure * count_1(mask);\
         }\
     }

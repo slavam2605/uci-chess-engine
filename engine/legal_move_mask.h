@@ -7,8 +7,6 @@
 #include "magic/magic_numbers.h"
 #include "magic/magic_generator.h"
 
-#define USE_MAGIC true
-
 namespace legal_move_mask {
     inline bitboard generate_short_pawn_mask(const game_state& state, uint8_t side) {
         if (side == chess::White) {
@@ -48,112 +46,49 @@ namespace legal_move_mask {
     }
 
     template <uint8_t Figure>
-    inline bitboard generate_figure_mask(const game_state& state, uint8_t position, uint8_t side, bool only_captures) = delete;
+    inline bitboard generate_figure_mask(uint8_t position, bitboard occupied) = delete;
 
     template <>
-    inline bitboard generate_figure_mask<chess::King>(const game_state& state, uint8_t position, uint8_t side, bool only_captures) {
-        if (only_captures) {
-            return king_mask::mask[position] & state.side_board[chess::inverse_color(side)];
-        }
-        return king_mask::mask[position] & state.inv_side_board[side];
+    inline bitboard generate_figure_mask<chess::King>(uint8_t position, bitboard occupied) {
+        return king_mask::mask[position];
     }
     
     template <>
-    inline bitboard generate_figure_mask<chess::Knight>(const game_state& state, uint8_t position, uint8_t side, bool only_captures) {
-        if (only_captures) {
-            return knight_mask::mask[position] & state.side_board[chess::inverse_color(side)];
-        }
-        return knight_mask::mask[position] & state.inv_side_board[side];
+    inline bitboard generate_figure_mask<chess::Knight>(uint8_t position, bitboard occupied) {
+        return knight_mask::mask[position];
     }
     
-    inline bitboard generate_ray_mask(const game_state& state, uint8_t position, uint8_t side, 
-                                      bool only_captures, uint8_t direction, bool is_lsb) {
-        auto ray = slider_mask::mask[position][direction];
-        auto blockers = ray & state.all;
-        if (!blockers) {
-            return only_captures ? 0 : ray;
-        }
-        auto blocking_square = is_lsb ? lsb(blockers) : msb(blockers);
-        bitboard result = only_captures ? 0 : ray ^ slider_mask::mask[blocking_square][direction];
-        if (get_bit(state.side_board[side], blocking_square)) {
-            set_0(result, blocking_square);
-        } else {
-            set_1(result, blocking_square);
-        }
-        return result;
-    }
-
-    inline bitboard magic_rook_mask_impl(bitboard occ, uint8_t position, uint8_t side) {
-        auto block = occ & magic_generator::rook_mask[position];
+    template <>
+    inline bitboard generate_figure_mask<chess::Rook>(uint8_t position, bitboard occupied) {
+        auto block = occupied & magic_generator::rook_mask[position];
         auto index = (block * magic::rook_magic[position]) >> (64 - magic::rook_shift[position]);
         return magic_generator::rook_attack_masks[position][index];
     }
-
-    inline bitboard magic_bishop_mask_impl(bitboard occ, uint8_t position, uint8_t side) {
-        auto block = occ & magic_generator::bishop_mask[position];
+    
+    template <>
+    inline bitboard generate_figure_mask<chess::Bishop>(uint8_t position, bitboard occupied) {
+        auto block = occupied & magic_generator::bishop_mask[position];
         auto index = (block * magic::bishop_magic[position]) >> (64 - magic::bishop_shift[position]);
         return magic_generator::bishop_attack_masks[position][index];
     }
     
-    inline bitboard generate_magic_rook_mask(const game_state& state, uint8_t position, uint8_t side, bool only_captures) {
-        auto attack = magic_rook_mask_impl(state.all, position, side);
-        if (only_captures) {
-            return attack & state.side_board[chess::inverse_color(side)];
-        }
-        return attack & state.inv_side_board[side];
-    }
-
-    inline bitboard generate_magic_bishop_mask(const game_state& state, uint8_t position, uint8_t side, bool only_captures) {
-        auto attack = magic_bishop_mask_impl(state.all, position, side);
-        if (only_captures) {
-            return attack & state.side_board[chess::inverse_color(side)];
-        }
-        return attack & state.inv_side_board[side];
-    }
-    
     template <>
-    inline bitboard generate_figure_mask<chess::Rook>(const game_state& state, uint8_t position, uint8_t side, bool only_captures) {
-#if USE_MAGIC
-        return generate_magic_rook_mask(state, position, side, only_captures);
-#else
-        auto north = generate_ray_mask(state, position, side, only_captures, slider_mask::direction::North, true);
-        auto south = generate_ray_mask(state, position, side, only_captures, slider_mask::direction::South, false);
-        auto west = generate_ray_mask(state, position, side, only_captures, slider_mask::direction::West, false);
-        auto east = generate_ray_mask(state, position, side, only_captures, slider_mask::direction::East, true);
-        return north | south | west | east;
-#endif
-    }
-    
-    template <>
-    inline bitboard generate_figure_mask<chess::Bishop>(const game_state& state, uint8_t position, uint8_t side, bool only_captures) {
-#if USE_MAGIC
-        return generate_magic_bishop_mask(state, position, side, only_captures);
-#else
-        auto nw = generate_ray_mask(state, position, side, only_captures, slider_mask::direction::NorthWest, true);
-        auto ne = generate_ray_mask(state, position, side, only_captures, slider_mask::direction::NorthEast, true);
-        auto sw = generate_ray_mask(state, position, side, only_captures, slider_mask::direction::SouthWest, false);
-        auto se = generate_ray_mask(state, position, side, only_captures, slider_mask::direction::SouthEast, false);
-        return nw | ne | sw | se;
-#endif
-    }
-    
-    template <>
-    inline bitboard generate_figure_mask<chess::Queen>(const game_state& state, uint8_t position, uint8_t side, bool only_captures) {
-        auto rook = generate_figure_mask<chess::Rook>(state, position, side, only_captures);
-        auto bishop = generate_figure_mask<chess::Bishop>(state, position, side, only_captures);
+    inline bitboard generate_figure_mask<chess::Queen>(uint8_t position, bitboard occupied) {
+        auto rook = generate_figure_mask<chess::Rook>(position, occupied);
+        auto bishop = generate_figure_mask<chess::Bishop>(position, occupied);
         return rook | bishop;
     }
     
-    inline bitboard xray_bishop_attacks(const game_state& state, bitboard blockers, uint8_t position, uint8_t side) {
-        auto attacks = magic_bishop_mask_impl(state.all, position, side);
+    inline bitboard xray_bishop_attacks(const game_state& state, bitboard blockers, uint8_t position) {
+        auto attacks = generate_figure_mask<chess::Bishop>(position, state.all);
         blockers &= attacks;
-        return attacks ^ magic_bishop_mask_impl(state.all ^ blockers, position, side);
+        return attacks ^ generate_figure_mask<chess::Bishop>(position, state.all ^ blockers);
     }
 
-    inline bitboard xray_rook_attacks(const game_state& state, bitboard blockers, uint8_t position, uint8_t side) {
-        auto attacks = magic_rook_mask_impl(state.all, position, side);
+    inline bitboard xray_rook_attacks(const game_state& state, bitboard blockers, uint8_t position) {
+        auto attacks = generate_figure_mask<chess::Rook>(position, state.all);
         blockers &= attacks;
-        return attacks ^ magic_rook_mask_impl(state.all ^ blockers, position, side);
+        return attacks ^ generate_figure_mask<chess::Rook>(position, state.all ^ blockers);
     }
 }
 

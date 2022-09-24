@@ -16,6 +16,7 @@ public:
     void push_back(const chess_move& move);
     [[nodiscard]] uint8_t size() const;
     void clear();
+    void resize(size_t new_size);
     array_type::iterator begin();
     array_type::iterator end();
 };

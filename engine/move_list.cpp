@@ -30,3 +30,8 @@ array_type::iterator move_list::end() {
 void move_list::clear() {
     _size = 0;
 }
+
+void move_list::resize(size_t new_size) {
+    Assert(new_size < _size)
+    _size = new_size;
+}
