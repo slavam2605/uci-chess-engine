@@ -47,7 +47,7 @@ void dynamic_evaluator::sort_moves(move_list& moves, const game_state& state, ui
 chess_move dynamic_evaluator::find_best_move(const game_state& state, int depth) {
     transposition_table table;
     killer_table ktable;
-    chess_move best_move;
+    chess_move best_move = chess_move::invalid();
     int color = state.side == chess::White ? 1 : -1;
     for (int dd = 1; dd <= depth; dd++) {
         pvs(state, table, ktable, dd, 1, -numeric_limits<int32_t>::max(), numeric_limits<int32_t>::max(), color, &best_move);

@@ -24,6 +24,7 @@ struct chess_move {
     chess_move(uint8_t from, uint8_t to, uint8_t side, uint8_t attacker_type, uint8_t defender_type, move_flag flag = move_flag::Default);
     chess_move(const chess_move& move) = default;
     chess_move(const chess_move& move, move_flag new_flag);
+    static chess_move invalid();
     [[nodiscard]] bool is_valid() const;
 
     friend bool operator==(const chess_move& lhs, const chess_move& rhs);

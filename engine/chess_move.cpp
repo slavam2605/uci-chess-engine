@@ -1,7 +1,12 @@
 #include "chess_move.h"
 #include "chess_utils.h"
 
-chess_move::chess_move() : chess_move(chess::Empty, chess::Empty, chess::Empty, chess::Empty, chess::Empty) {}
+// This constructor leaves fields uninitialized intentionally to improve performance
+chess_move::chess_move() {} // NOLINT(cppcoreguidelines-pro-type-member-init,modernize-use-equals-default)
+
+chess_move chess_move::invalid() {
+    return {chess::Empty, chess::Empty, chess::Empty, chess::Empty, chess::Empty};
+}
 
 chess_move::chess_move(uint8_t from, uint8_t to, uint8_t side, uint8_t attacker_type, uint8_t defender_type, chess_move::move_flag flag)
         : from(from), to(to), side(side), attacker_type(attacker_type), defender_type(defender_type), flag(flag) {}
