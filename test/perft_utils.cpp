@@ -29,7 +29,7 @@ size_t perft_utils::perft_inner(const game_state& state, move_list_pool& pool, i
         if (depth > 2) {
             result += perft_inner(new_state, pool, depth - 1);
         } else {
-            move_list new_moves;
+            move_list& new_moves = pool.init_list(depth - 1);
             chess_move_generator::generate_all_moves(new_moves, new_state, new_state.side);
             result += new_moves.size();
         }
