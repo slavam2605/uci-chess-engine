@@ -33,6 +33,7 @@ public:
     void apply_move(const chess_move& move);
     [[nodiscard]] bool is_check() const;
     [[nodiscard]] std::string fen() const;
+    [[nodiscard]] bool is_capture(const chess_move& move) const;
 };
 
 

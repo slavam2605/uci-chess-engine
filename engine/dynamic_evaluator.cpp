@@ -158,6 +158,7 @@ int32_t dynamic_evaluator::nega_max_captures(const game_state& state, int real_d
     sort_moves(moves, state, side, {}, killer_table::Empty, real_depth);
 
     for (const auto& move : moves) {
+        Assert(state.is_capture(move))
         game_state new_state(state);
         new_state.apply_move(move);
         evaluation = -nega_max_captures(new_state, real_depth + 1, -beta, -alpha, -color);

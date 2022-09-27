@@ -302,3 +302,15 @@ std::string game_state::fen() const {
     ss << ' ' << halfmove_clock << ' ' << fullmove_number;
     return ss.str();
 }
+
+bool game_state::is_capture(const chess_move &move) const {
+    if (move.flag == chess_move::move_flag::EnPassantCapture) return true;
+    if (move.flag >= chess_move::move_flag::WhiteLongCastling &&
+        move.flag <= chess_move::move_flag::BlackShortCastling)
+        return false;
+    for (uint8_t piece = chess::MinPiece; piece <= MaxPiece; piece++) {
+        if (get_bit(board[chess::inverse_color(move.side)][piece], move.to))
+            return true;
+    }
+    return false;
+}

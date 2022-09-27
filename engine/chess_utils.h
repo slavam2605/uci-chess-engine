@@ -14,6 +14,8 @@ namespace chess {
     static constexpr uint8_t Bishop = 4;
     static constexpr uint8_t Pawn = 5;
     static constexpr uint8_t Empty = 255;
+    static constexpr uint8_t MinPiece = Queen;
+    static constexpr uint8_t MaxPiece = Pawn;
 
     inline uint8_t inverse_color(uint8_t side) {
         return side == White ? Black : White;
