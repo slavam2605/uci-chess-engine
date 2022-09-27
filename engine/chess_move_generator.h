@@ -207,12 +207,14 @@ namespace chess_move_generator {
         auto pinned = get_absolute_pinned(state, side);
         bitboard target = only_captures ? state.side_board[chess::inverse_color(side)]
                                         : state.inv_side_board[side];
-        
+
+        generate_figure_moves<chess::King>(moves, state, side, 0, king_position, target);
+
         // In case of double check only king can move
         if (checkers_count <= 1) {
             if (checkers_count == 1) {
                 auto checker = lsb(checkers);
-                target = in_between_mask::mask[king_position][checker] | (1ULL << checker); 
+                target &= in_between_mask::mask[king_position][checker] | (1ULL << checker);
             }
             generate_figure_moves_pawn(moves, state, side, only_captures, pinned, king_position, target);
             generate_figure_moves<chess::Knight>(moves, state, side, pinned, king_position, target);
@@ -224,7 +226,6 @@ namespace chess_move_generator {
                 generate_castling_moves(moves, state, side);
             }
         }
-        generate_figure_moves<chess::King>(moves, state, side, 0, king_position, state.inv_side_board[side]);
         
         // Filter out non-legal moves
         int index = 0;
