@@ -39,6 +39,7 @@ void dynamic_evaluator::sort_moves(move_list& moves, const game_state& state, ui
             legal_move_mask::generate_right_pawn_capture_mask(state, chess::inverse_color(side), true);
     sort(moves.begin(), moves.end(), [pawn_capture_mask, real_depth, &hash_move, &ktable](const auto& a, const auto& b) {
         if (a == hash_move) return true;
+        if (b == hash_move) return false;
         return eval_move(a, pawn_capture_mask, ktable.is_killer(real_depth, a)) > eval_move(b, pawn_capture_mask, ktable.is_killer(real_depth, b));
     });
 }
