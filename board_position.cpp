@@ -207,18 +207,25 @@ match_result board_position::get_match_result() const {
     return match_result::NONE;
 }
 
+#define UnicodeSymbols true
+#if UnicodeSymbols
+#define pick(a, b) b
+#else
+#define pick(a, b) a
+#endif
+
 ostream& operator<<(ostream& stream, const board_position& board) {
-    auto ltc = char(218);
-    auto rtc = char(191);
-    auto lbc = char(192);
-    auto rbc = char(217);
-    auto tt = char(194);
-    auto bt = char(193);
-    auto lt = char(195);
-    auto rt = char(180);
-    auto cross = char(197);
-    auto h = char(196);
-    auto v = char(179);
+    auto ltc = pick(char(218), "\u250C");
+    auto rtc = pick(char(191), "\u2510");
+    auto lbc = pick(char(192), "\u2514");
+    auto rbc = pick(char(217), "\u2518");
+    auto tt = pick(char(194), "\u252C");
+    auto bt = pick(char(193), "\u2534");
+    auto lt = pick(char(195), "\u251C");
+    auto rt = pick(char(180), "\u2524");
+    auto cross = pick(char(197), "\u253C");
+    auto h = pick(char(196), "\u2500");
+    auto v = pick(char(179), "\u2502");
     
     stream << ltc;
     for (int i = 0; i < 7; i++) {
