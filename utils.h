@@ -13,7 +13,8 @@
 
 #if EnableAssertions
 #define Assert(block) if (!(block)) {\
-    std::cerr << "Assertion failed at " << __FILE__ << ":" << __LINE__ << " (in " << __func__ << ")" << std::endl;\
+    std::cerr << "Assertion failed at " << __FILE__ << ":" << __LINE__ << " (in " << __func__ << ")" << std::endl; \
+    _CrtDbgBreak(); \
     exit(1);\
 }
 #else
