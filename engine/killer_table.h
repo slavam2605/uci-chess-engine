@@ -6,7 +6,8 @@
 #include "chess_move.h"
 
 class killer_table {
-    std::vector<std::unordered_set<chess_move>> killers;
+    mutable std::vector<std::unordered_set<chess_move>> killers;
+    void ensure_size(int depth) const;
 public:
     static const killer_table Empty;
     
