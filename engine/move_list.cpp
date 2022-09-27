@@ -32,6 +32,6 @@ void move_list::clear() {
 }
 
 void move_list::resize(size_t new_size) {
-    Assert(new_size < _size)
+    Assert(new_size <= _size)
     _size = new_size;
 }
