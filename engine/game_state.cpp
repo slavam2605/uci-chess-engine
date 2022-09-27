@@ -198,7 +198,7 @@ void game_state::apply_move(const chess_move& move) {
 
 bool game_state::is_check() const {
     uint8_t king_index = lsb(board[side][chess::King]); 
-    return chess_move_generator::in_danger(*this, king_index, side);
+    return chess_move_generator::in_danger(*this, this->all, king_index, side);
 }
 
 void game_state::add_piece(uint8_t index, uint8_t color, uint8_t type) {

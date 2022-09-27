@@ -11,6 +11,6 @@ void transposition_table::add(const game_state& state, int depth, chess_move bes
 chess_move transposition_table::try_get_best_move(const game_state& state) {
     auto hash = state.hash.value;
     auto iter = map.find(hash);
-    if (iter == map.end()) return {};
+    if (iter == map.end()) return chess_move::invalid();
     return iter->second.best_move;
 }
