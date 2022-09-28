@@ -19,6 +19,8 @@ public:
     void resize(size_t new_size);
     array_type::iterator begin();
     array_type::iterator end();
+    [[nodiscard]] array_type::const_iterator begin() const;
+    [[nodiscard]] array_type::const_iterator end() const;
 };
 
 

@@ -27,6 +27,14 @@ array_type::iterator move_list::end() {
     return moves.begin() + _size;
 }
 
+array_type::const_iterator move_list::begin() const {
+    return moves.begin();
+}
+
+array_type::const_iterator move_list::end() const {
+    return moves.begin() + _size;
+}
+
 void move_list::clear() {
     _size = 0;
 }

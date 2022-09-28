@@ -33,21 +33,21 @@ namespace chess_move_generator {
 
     inline bool is_legal(const chess_move& move, const game_state& state) {
         auto new_state = state;
-        set_0(new_state.board[move.side][move.attacker_type], move.from);
-        set_1(new_state.board[move.side][move.attacker_type], move.to);
+        set_0(new_state.board[state.side][move.attacker_type], move::from(move));
+        set_1(new_state.board[state.side][move.attacker_type], move::to(move));
         if (move.defender_type != chess::Empty) {
-            set_0(new_state.board[chess::inverse_color(move.side)][move.defender_type], move.to);
+            set_0(new_state.board[chess::inverse_color(state.side)][move.defender_type], move::to(move));
         }
         if (move.flag == chess_move::move_flag::EnPassantCapture) {
-            if (move.side == chess::White) {
-                set_0(new_state.board[chess::Black][chess::Pawn], move.to - 8);
+            if (state.side == chess::White) {
+                set_0(new_state.board[chess::Black][chess::Pawn], move::to(move) - 8);
             } else {
-                set_0(new_state.board[chess::White][chess::Pawn], move.to + 8);
+                set_0(new_state.board[chess::White][chess::Pawn], move::to(move) + 8);
             }
         }
         new_state.update_bitboards();
-        auto king_position = lsb(new_state.board[move.side][chess::King]);
-        return !in_danger(new_state, new_state.all, king_position, move.side);
+        auto king_position = lsb(new_state.board[state.side][chess::King]);
+        return !in_danger(new_state, new_state.all, king_position, state.side);
     }
     
     template <uint8_t Figure>
@@ -56,14 +56,7 @@ namespace chess_move_generator {
         while (mask) {
             auto to = lsb(mask);
             set_0(mask, to);
-            uint8_t defender_type = chess::Empty;
-            for (int type = 0; type < 6; type++) {
-                if (get_bit(state.board[chess::inverse_color(side)][type], to)) {
-                    defender_type = type;
-                    break;
-                }
-            }
-            chess_move move(from, to, side, Figure, defender_type);
+            chess_move move(from, to, Figure, state.get_piece(chess::inverse_color(side), to));
             if constexpr (Figure == chess::King) {
                 if (!in_danger(state, state.all ^ (1ULL << from), to, side)) {
                     moves.push_back(move);
@@ -94,17 +87,9 @@ namespace chess_move_generator {
         while (mask) {
             auto to = lsb(mask);
             set_0(mask, to);
-            uint8_t defender_type = chess::Empty;
-            if (is_capture) {
-                for (int type = 0; type < 6; type++) {
-                    if (get_bit(state.board[chess::inverse_color(side)][type], to)) {
-                        defender_type = type;
-                        break;
-                    }
-                }
-            }
             auto from = static_cast<uint8_t>(to + from_shift);
-            chess_move move(from, to, side, chess::Pawn, defender_type, flag);
+            auto defending_piece = is_capture ? state.get_piece(chess::inverse_color(side), to) : chess::Empty;
+            chess_move move(from, to, chess::Pawn, defending_piece, flag);
             if (!get_bit(pinned, from) || aligned(from, to, king_sq)) {
                 if (to < 8 || to > 55) {
                     moves.push_back(chess_move(move, chess_move::move_flag::PromoteToBishop));
@@ -135,20 +120,20 @@ namespace chess_move_generator {
         if (state.en_passant == chess::Empty) return;
         if (side == chess::White) {
             if (state.en_passant % 8 != 7 && get_bit(state.board[chess::White][chess::Pawn], state.en_passant - 7)) {
-                chess_move move(state.en_passant - 7, state.en_passant, chess::White, chess::Pawn, chess::Empty, chess_move::move_flag::EnPassantCapture);
+                chess_move move(state.en_passant - 7, state.en_passant, chess::Pawn, chess::Empty, chess_move::move_flag::EnPassantCapture);
                 if (is_legal(move, state)) moves.push_back(move);
             }
             if (state.en_passant % 8 != 0 && get_bit(state.board[chess::White][chess::Pawn], state.en_passant - 9)) {
-                chess_move move(state.en_passant - 9, state.en_passant, chess::White, chess::Pawn, chess::Empty, chess_move::move_flag::EnPassantCapture);
+                chess_move move(state.en_passant - 9, state.en_passant, chess::Pawn, chess::Empty, chess_move::move_flag::EnPassantCapture);
                 if (is_legal(move, state)) moves.push_back(move);
             }
         } else {
             if (state.en_passant % 8 != 0 && get_bit(state.board[chess::Black][chess::Pawn], state.en_passant + 7)) {
-                chess_move move(state.en_passant + 7, state.en_passant, chess::Black, chess::Pawn, chess::Empty, chess_move::move_flag::EnPassantCapture);
+                chess_move move(state.en_passant + 7, state.en_passant, chess::Pawn, chess::Empty, chess_move::move_flag::EnPassantCapture);
                 if (is_legal(move, state)) moves.push_back(move);
             }
             if (state.en_passant % 8 != 7 && get_bit(state.board[chess::Black][chess::Pawn], state.en_passant + 9)) {
-                chess_move move(state.en_passant + 9, state.en_passant, chess::Black, chess::Pawn, chess::Empty, chess_move::move_flag::EnPassantCapture);
+                chess_move move(state.en_passant + 9, state.en_passant, chess::Pawn, chess::Empty, chess_move::move_flag::EnPassantCapture);
                 if (is_legal(move, state)) moves.push_back(move);
             }
         }
@@ -165,7 +150,7 @@ namespace chess_move_generator {
             !in_danger(state, state.all, index + 2, side) &&   // king's target cell is not under attack
             !in_danger(state, state.all, index + 3, side) &&   // king's passing cell is not under attack
             !in_danger(state, state.all, index + 4, side)) {   // king itself is not under attack
-            moves.push_back(chess_move(index + 4, index + 2, side, chess::King, chess::Empty, long_flag));
+            moves.push_back(chess_move(index + 4, index + 2, chess::King, chess::Empty, long_flag));
         }
         if (state.castling[side][chess::King] &&    // castling available => rook and king are on their positions
             get_bit(state.empty, index + 5) &&      // |
@@ -173,7 +158,7 @@ namespace chess_move_generator {
             !in_danger(state, state.all, index + 4, side) &&   // king itself is not under attack
             !in_danger(state, state.all, index + 5, side) &&   // king's passing cell is not under attack
             !in_danger(state, state.all, index + 6, side)) {   // king's target cell is not under attack
-            moves.push_back(chess_move(index + 4, index + 6, side, chess::King, chess::Empty, short_flag));
+            moves.push_back(chess_move(index + 4, index + 6, chess::King, chess::Empty, short_flag));
         }
     }
     

@@ -21,7 +21,7 @@ class dynamic_evaluator {
                               int real_depth, int32_t alpha, int32_t beta, int color);
     static void sort_moves(move_list& moves, const game_state& state, uint8_t side, 
                            const chess_move& hash_move, const killer_table& ktable, int real_depth);
-    static int32_t eval_move(const chess_move& move, bitboard pawn_capture_mask, bool is_killer);
+    static int32_t eval_move(const chess_move& move, const game_state& state, bitboard pawn_capture_mask, bool is_killer);
 public:
     int32_t max_depth;
     int32_t main_search_nodes;

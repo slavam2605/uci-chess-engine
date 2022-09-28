@@ -109,23 +109,22 @@ void game_state::update_bitboards() {
 }
 
 void game_state::apply_move(const chess_move& move) {
-    Assert(side == move.side)
-    remove_piece(move.from, move.side, move.attacker_type);
-    add_piece(move.to, move.side, move.attacker_type);
+    remove_piece(move::from(move), side, move.attacker_type);
+    add_piece(move::to(move), side, move.attacker_type);
     if (move.defender_type != Empty) {
-        remove_piece(move.to, inverse_color(move.side), move.defender_type);
+        remove_piece(move::to(move), inverse_color(side), move.defender_type);
     }
     switch (move.flag) {
         case chess_move::move_flag::Default:
             break;
         case chess_move::move_flag::PawnLongMove:
-            en_passant = (move.from + move.to) / 2;
+            en_passant = (move::from(move) + move::to(move)) / 2;
             break;
         case chess_move::move_flag::EnPassantCapture:
-            if (move.side == White) {
-                remove_piece(move.to - 8, Black, Pawn);
+            if (side == White) {
+                remove_piece(move::to(move) - 8, Black, Pawn);
             } else {
-                remove_piece(move.to + 8, White, Pawn);
+                remove_piece(move::to(move) + 8, White, Pawn);
             }
             break;
         case chess_move::move_flag::WhiteLongCastling:
@@ -149,20 +148,20 @@ void game_state::apply_move(const chess_move& move) {
             castling_happened[Black] = true;
             break;
         case chess_move::move_flag::PromoteToRook:
-            remove_piece(move.to, move.side, Pawn);
-            add_piece(move.to, move.side, Rook);
+            remove_piece(move::to(move), side, Pawn);
+            add_piece(move::to(move), side, Rook);
             break;
         case chess_move::move_flag::PromoteToQueen:
-            remove_piece(move.to, move.side, Pawn);
-            add_piece(move.to, move.side, Queen);
+            remove_piece(move::to(move), side, Pawn);
+            add_piece(move::to(move), side, Queen);
             break;
         case chess_move::move_flag::PromoteToKnight:
-            remove_piece(move.to, move.side, Pawn);
-            add_piece(move.to, move.side, Knight);
+            remove_piece(move::to(move), side, Pawn);
+            add_piece(move::to(move), side, Knight);
             break;
         case chess_move::move_flag::PromoteToBishop:
-            remove_piece(move.to, move.side, Pawn);
-            add_piece(move.to, move.side, Bishop);
+            remove_piece(move::to(move), side, Pawn);
+            add_piece(move::to(move), side, Bishop);
             break;
         default: Assert(false)
     }
@@ -170,7 +169,7 @@ void game_state::apply_move(const chess_move& move) {
     if (move.flag != chess_move::move_flag::PawnLongMove) {
         en_passant = chess::Empty;
     }
-    switch (move.from) {
+    switch (move::from(move)) {
         case 4:
             break_castling(White, Queen);
             break_castling(White, King);
@@ -184,7 +183,7 @@ void game_state::apply_move(const chess_move& move) {
     if (!get_bit(board[White][Rook], 7))  break_castling(White, King);
     if (!get_bit(board[Black][Rook], 56)) break_castling(Black, Queen);
     if (!get_bit(board[Black][Rook], 63)) break_castling(Black, King);
-    if (move.side == Black) {
+    if (side == Black) {
         fullmove_number++;
     }
     // en passant capture is handled here, because attacker figure is pawn here
@@ -266,7 +265,7 @@ std::string game_state::fen() const {
     for (int row = 7; row >= 0; row--) {
         int empty_chain = 0;
         for (int col = 0; col < 9; col++) {
-            auto [piece, piece_side] = get_piece(*this, col, row);
+            auto [piece, piece_side] = ::get_piece(*this, col, row);
             if ((col == 8 || piece != chess::Empty) && empty_chain > 0) {
                 ss << char(empty_chain + '0');
                 empty_chain = 0;
@@ -309,8 +308,16 @@ bool game_state::is_capture(const chess_move &move) const {
         move.flag <= chess_move::move_flag::BlackShortCastling)
         return false;
     for (uint8_t piece = chess::MinPiece; piece <= MaxPiece; piece++) {
-        if (get_bit(board[chess::inverse_color(move.side)][piece], move.to))
+        if (get_bit(board[chess::inverse_color(side)][piece], move::to(move)))
             return true;
     }
     return false;
+}
+
+uint8_t game_state::get_piece(uint8_t color, uint8_t position) const {
+    for (uint8_t piece = chess::MinPiece; piece <= chess::MaxPiece; piece++) {
+        if (get_bit(board[color][piece], position))
+            return piece;
+    }
+    return chess::Empty;
 }

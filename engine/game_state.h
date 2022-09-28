@@ -31,6 +31,7 @@ public:
     explicit game_state(const std::string& fen);
     game_state(const game_state& state) = default;
     void apply_move(const chess_move& move);
+    [[nodiscard]] uint8_t get_piece(uint8_t color, uint8_t position) const;
     [[nodiscard]] bool is_check() const;
     [[nodiscard]] std::string fen() const;
     [[nodiscard]] bool is_capture(const chess_move& move) const;

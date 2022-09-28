@@ -14,23 +14,29 @@ struct chess_move {
         PromoteToRook, PromoteToQueen
     };
 
-    uint8_t from, to;
+    static const chess_move Invalid;
+
+    uint32_t packed;
     move_flag flag;
-    uint8_t side;
     uint8_t attacker_type;
     uint8_t defender_type;
+    int evaluation;
     
     chess_move();
-    chess_move(uint8_t from, uint8_t to, uint8_t side, uint8_t attacker_type, uint8_t defender_type, move_flag flag = move_flag::Default);
+    chess_move(uint8_t from, uint8_t to, uint8_t attacker_type, uint8_t defender_type, move_flag flag = move_flag::Default);
     chess_move(const chess_move& move) = default;
     chess_move(const chess_move& move, move_flag new_flag);
-    static chess_move invalid();
     [[nodiscard]] bool is_valid() const;
 
     friend bool operator==(const chess_move& lhs, const chess_move& rhs);
     friend std::ostream& operator<<(std::ostream& stream, const chess_move& move);
 };
 
-MAKE_HASHABLE(chess_move, t.from, t.to, t.flag)
+namespace move {
+    uint8_t from(const chess_move& move);
+    uint8_t to(const chess_move& move);
+}
+
+MAKE_HASHABLE(chess_move, move::from(t), move::to(t), t.flag)
 
 #endif //CHESSUCIENGINE_CHESS_MOVE_H

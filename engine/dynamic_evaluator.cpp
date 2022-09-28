@@ -17,9 +17,9 @@ dynamic_evaluator::dynamic_evaluator() :
         pool(), max_depth(0), main_search_nodes(0), zero_window_nodes(0), capture_search_nodes(0), 
         transposition_found(0), transposition_best_hit(0), pvs_research_count(0) {}
 
-int32_t dynamic_evaluator::eval_move(const chess_move& move, bitboard pawn_capture_mask, bool is_killer) {
+int32_t dynamic_evaluator::eval_move(const chess_move& move, const game_state& state, bitboard pawn_capture_mask, bool is_killer) {
     int32_t result = 0;
-    if (move.attacker_type != chess::Pawn && get_bit(pawn_capture_mask, move.to)) {
+    if (move.attacker_type != chess::Pawn && get_bit(pawn_capture_mask, move::to(move))) {
         result -= static_evaluator::material_cost[move.attacker_type];
     }
     if (move.defender_type != chess::Empty) {
@@ -37,17 +37,20 @@ void dynamic_evaluator::sort_moves(move_list& moves, const game_state& state, ui
     bitboard pawn_capture_mask =
             legal_move_mask::generate_left_pawn_capture_mask(state, chess::inverse_color(side), true) |
             legal_move_mask::generate_right_pawn_capture_mask(state, chess::inverse_color(side), true);
-    sort(moves.begin(), moves.end(), [pawn_capture_mask, real_depth, &hash_move, &ktable](const auto& a, const auto& b) {
+    for (auto &move : moves) {
+        move.evaluation = eval_move(move, state, pawn_capture_mask, ktable.is_killer(real_depth, move));
+    }
+    sort(moves.begin(), moves.end(), [&hash_move](const auto& a, const auto& b) {
         if (a == hash_move) return true;
         if (b == hash_move) return false;
-        return eval_move(a, pawn_capture_mask, ktable.is_killer(real_depth, a)) > eval_move(b, pawn_capture_mask, ktable.is_killer(real_depth, b));
+        return a.evaluation > b.evaluation;
     });
 }
 
 chess_move dynamic_evaluator::find_best_move(const game_state& state, int depth) {
     transposition_table table;
     killer_table ktable;
-    chess_move best_move = chess_move::invalid();
+    chess_move best_move = chess_move::Invalid;
     int color = state.side == chess::White ? 1 : -1;
     for (int dd = 1; dd <= depth; dd++) {
         pvs(state, table, ktable, dd, 1, -numeric_limits<int32_t>::max(), numeric_limits<int32_t>::max(), color, &best_move);
@@ -156,7 +159,7 @@ int32_t dynamic_evaluator::nega_max_captures(const game_state& state, int real_d
     move_list& moves = pool.init_list(real_depth);
     uint8_t side = color > 0 ? chess::White : chess::Black;
     chess_move_generator::generate_all_moves(moves, state, side, true);
-    sort_moves(moves, state, side, {}, killer_table::Empty, real_depth);
+    sort_moves(moves, state, side, chess_move::Invalid, killer_table::Empty, real_depth);
 
     for (const auto& move : moves) {
         Assert(state.is_capture(move))
