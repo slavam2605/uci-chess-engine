@@ -7,7 +7,7 @@ chess_move::chess_move() {} // NOLINT(cppcoreguidelines-pro-type-member-init,mod
 const chess_move chess_move::Invalid = {chess::Empty, chess::Empty, chess::Empty, chess::Empty};
 
 chess_move::chess_move(uint8_t from, uint8_t to, uint8_t attacker_type, uint8_t defender_type, chess_move::move_flag flag)
-        : packed(from | (to << 6)), attacker_type(attacker_type), defender_type(defender_type), flag(flag), evaluation(0) {}
+        : packed(from + (to << 8) + (attacker_type << 16) + (defender_type << 24)), flag(flag), evaluation(0) {}
 
 chess_move::chess_move(const chess_move& move, chess_move::move_flag new_flag) : chess_move(move) {
     flag = new_flag;
@@ -42,10 +42,18 @@ bool chess_move::is_valid() const {
 
 namespace move {
     uint8_t from(const chess_move& move) {
-        return move.packed & 0b111111;
+        return move.packed & 0xFF;
     }
 
     uint8_t to(const chess_move& move) {
-        return (move.packed >> 6) & 0b111111;
+        return (move.packed >> 8) & 0xFF;
+    }
+
+    uint8_t attacker(const chess_move& move) {
+        return (move.packed >> 16) & 0xFF;
+    }
+
+    uint8_t defender(const chess_move& move) {
+        return (move.packed >> 24) & 0xFF;
     }
 }

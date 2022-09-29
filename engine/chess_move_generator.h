@@ -33,10 +33,10 @@ namespace chess_move_generator {
 
     inline bool is_legal(const chess_move& move, const game_state& state) {
         auto new_state = state;
-        set_0(new_state.board[state.side][move.attacker_type], move::from(move));
-        set_1(new_state.board[state.side][move.attacker_type], move::to(move));
-        if (move.defender_type != chess::Empty) {
-            set_0(new_state.board[chess::inverse_color(state.side)][move.defender_type], move::to(move));
+        set_0(new_state.board[state.side][move::attacker(move)], move::from(move));
+        set_1(new_state.board[state.side][move::attacker(move)], move::to(move));
+        if (move::defender(move) != chess::Empty) {
+            set_0(new_state.board[chess::inverse_color(state.side)][move::defender(move)], move::to(move));
         }
         if (move.flag == chess_move::move_flag::EnPassantCapture) {
             if (state.side == chess::White) {

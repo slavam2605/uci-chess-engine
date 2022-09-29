@@ -19,12 +19,12 @@ dynamic_evaluator::dynamic_evaluator() :
 
 int32_t dynamic_evaluator::eval_move(const chess_move& move, const game_state& state, bitboard pawn_capture_mask, bool is_killer) {
     int32_t result = 0;
-    if (move.attacker_type != chess::Pawn && get_bit(pawn_capture_mask, move::to(move))) {
-        result -= static_evaluator::material_cost[move.attacker_type];
+    if (move::attacker(move) != chess::Pawn && get_bit(pawn_capture_mask, move::to(move))) {
+        result -= static_evaluator::material_cost[move::attacker(move)];
     }
-    if (move.defender_type != chess::Empty) {
-        result += 1000 * static_evaluator::material_cost[move.defender_type];
-        result -= static_evaluator::material_cost[move.attacker_type];
+    if (move::defender(move) != chess::Empty) {
+        result += 1000 * static_evaluator::material_cost[move::defender(move)];
+        result -= static_evaluator::material_cost[move::attacker(move)];
     }
     if (is_killer) { // place killers right after all captures
         result += 10000;

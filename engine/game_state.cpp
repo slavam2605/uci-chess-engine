@@ -109,10 +109,10 @@ void game_state::update_bitboards() {
 }
 
 void game_state::apply_move(const chess_move& move) {
-    remove_piece(move::from(move), side, move.attacker_type);
-    add_piece(move::to(move), side, move.attacker_type);
-    if (move.defender_type != Empty) {
-        remove_piece(move::to(move), inverse_color(side), move.defender_type);
+    remove_piece(move::from(move), side, move::attacker(move));
+    add_piece(move::to(move), side, move::attacker(move));
+    if (move::defender(move) != Empty) {
+        remove_piece(move::to(move), inverse_color(side), move::defender(move));
     }
     switch (move.flag) {
         case chess_move::move_flag::Default:
@@ -187,7 +187,7 @@ void game_state::apply_move(const chess_move& move) {
         fullmove_number++;
     }
     // en passant capture is handled here, because attacker figure is pawn here
-    if (move.attacker_type == Pawn || move.defender_type != Empty) {
+    if (move::attacker(move) == Pawn || move::defender(move) != Empty) {
         halfmove_clock = 0;
     } else {
         halfmove_clock++;

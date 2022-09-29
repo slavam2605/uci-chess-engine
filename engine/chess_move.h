@@ -18,8 +18,6 @@ struct chess_move {
 
     uint32_t packed;
     move_flag flag;
-    uint8_t attacker_type;
-    uint8_t defender_type;
     int evaluation;
     
     chess_move();
@@ -35,6 +33,8 @@ struct chess_move {
 namespace move {
     uint8_t from(const chess_move& move);
     uint8_t to(const chess_move& move);
+    uint8_t attacker(const chess_move& move);
+    uint8_t defender(const chess_move& move);
 }
 
 MAKE_HASHABLE(chess_move, move::from(t), move::to(t), t.flag)
