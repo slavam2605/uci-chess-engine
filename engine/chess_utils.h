@@ -14,6 +14,7 @@ namespace chess {
     static constexpr uint8_t Bishop = 4;
     static constexpr uint8_t Pawn = 5;
     static constexpr uint8_t Empty = 255;
+    static constexpr uint8_t EmptyPiece = 7;
     static constexpr uint8_t MinPiece = Queen;
     static constexpr uint8_t MaxPiece = Pawn;
 

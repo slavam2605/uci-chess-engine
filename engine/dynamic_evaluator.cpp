@@ -22,7 +22,7 @@ int32_t dynamic_evaluator::eval_move(const chess_move& move, const game_state& s
     if (move::attacker(move) != chess::Pawn && get_bit(pawn_capture_mask, move::to(move))) {
         result -= static_evaluator::material_cost[move::attacker(move)];
     }
-    if (move::defender(move) != chess::Empty) {
+    if (move::defender(move) != chess::EmptyPiece) {
         result += 1000 * static_evaluator::material_cost[move::defender(move)];
         result -= static_evaluator::material_cost[move::attacker(move)];
     }

@@ -6,7 +6,7 @@
 #include <ostream>
 
 struct chess_move {
-    enum class move_flag {
+    enum class move_flag : uint8_t {
         Default, PawnLongMove, EnPassantCapture, 
         WhiteLongCastling, WhiteShortCastling,
         BlackLongCastling, BlackShortCastling,
@@ -15,9 +15,16 @@ struct chess_move {
     };
 
     static const chess_move Invalid;
+    static constexpr uint32_t FlagMask = 0xF0000;
 
+    /**
+     * [0-7 bits] from
+     * [8-15 bits] to
+     * [16-19 bits] flag
+     * [20-22 bits] attacker
+     * [23-25 bits] defender
+     */
     uint32_t packed;
-    move_flag flag;
     int evaluation;
     
     chess_move();
@@ -33,10 +40,18 @@ struct chess_move {
 namespace move {
     uint8_t from(const chess_move& move);
     uint8_t to(const chess_move& move);
+    chess_move::move_flag flag(const chess_move& move);
     uint8_t attacker(const chess_move& move);
     uint8_t defender(const chess_move& move);
 }
 
-MAKE_HASHABLE(chess_move, move::from(t), move::to(t), t.flag)
+namespace std {
+    template <>
+    struct hash<chess_move> {
+        size_t operator()(const chess_move& move) const {
+            return move.packed;
+        }
+    };
+}
 
 #endif //CHESSUCIENGINE_CHESS_MOVE_H

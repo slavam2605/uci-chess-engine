@@ -111,10 +111,10 @@ void game_state::update_bitboards() {
 void game_state::apply_move(const chess_move& move) {
     remove_piece(move::from(move), side, move::attacker(move));
     add_piece(move::to(move), side, move::attacker(move));
-    if (move::defender(move) != Empty) {
+    if (move::defender(move) != EmptyPiece) {
         remove_piece(move::to(move), inverse_color(side), move::defender(move));
     }
-    switch (move.flag) {
+    switch (move::flag(move)) {
         case chess_move::move_flag::Default:
             break;
         case chess_move::move_flag::PawnLongMove:
@@ -166,7 +166,7 @@ void game_state::apply_move(const chess_move& move) {
         default: Assert(false)
     }
     update_bitboards();
-    if (move.flag != chess_move::move_flag::PawnLongMove) {
+    if (move::flag(move) != chess_move::move_flag::PawnLongMove) {
         en_passant = chess::Empty;
     }
     switch (move::from(move)) {
@@ -187,7 +187,7 @@ void game_state::apply_move(const chess_move& move) {
         fullmove_number++;
     }
     // en passant capture is handled here, because attacker figure is pawn here
-    if (move::attacker(move) == Pawn || move::defender(move) != Empty) {
+    if (move::attacker(move) == Pawn || move::defender(move) != EmptyPiece) {
         halfmove_clock = 0;
     } else {
         halfmove_clock++;
@@ -233,7 +233,7 @@ pair<uint8_t, uint8_t> get_piece(const game_state& state, int col, int row) {
             }
         }
     }
-    return make_pair(chess::Empty, chess::Black);
+    return make_pair(chess::EmptyPiece, chess::Black);
 }
 
 char piece_to_char(uint8_t side, uint8_t piece) {
@@ -266,12 +266,12 @@ std::string game_state::fen() const {
         int empty_chain = 0;
         for (int col = 0; col < 9; col++) {
             auto [piece, piece_side] = ::get_piece(*this, col, row);
-            if ((col == 8 || piece != chess::Empty) && empty_chain > 0) {
+            if ((col == 8 || piece != chess::EmptyPiece) && empty_chain > 0) {
                 ss << char(empty_chain + '0');
                 empty_chain = 0;
             }
             if (col == 8) break;
-            if (piece == chess::Empty) {
+            if (piece == chess::EmptyPiece) {
                 empty_chain++;
                 continue;
             }
@@ -303,9 +303,9 @@ std::string game_state::fen() const {
 }
 
 bool game_state::is_capture(const chess_move &move) const {
-    if (move.flag == chess_move::move_flag::EnPassantCapture) return true;
-    if (move.flag >= chess_move::move_flag::WhiteLongCastling &&
-        move.flag <= chess_move::move_flag::BlackShortCastling)
+    if (move::flag(move) == chess_move::move_flag::EnPassantCapture) return true;
+    if (move::flag(move) >= chess_move::move_flag::WhiteLongCastling &&
+        move::flag(move) <= chess_move::move_flag::BlackShortCastling)
         return false;
     for (uint8_t piece = chess::MinPiece; piece <= MaxPiece; piece++) {
         if (get_bit(board[chess::inverse_color(side)][piece], move::to(move)))
@@ -319,5 +319,5 @@ uint8_t game_state::get_piece(uint8_t color, uint8_t position) const {
         if (get_bit(board[color][piece], position))
             return piece;
     }
-    return chess::Empty;
+    return chess::EmptyPiece;
 }
