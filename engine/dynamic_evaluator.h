@@ -7,10 +7,16 @@
 #include "move_list.h"
 #include "move_list_pool.h"
 #include "killer_table.h"
+#include "chess_utils.h"
 #include <vector>
 
 class dynamic_evaluator {
+    static constexpr int Infinity = 1000000000;
+    static constexpr size_t MaxDepth = 500;
+
     move_list_pool pool;
+    std::array<int, chess::MaxLegalMoves> evaluations;
+    std::array<std::array<int, chess::MaxLegalMoves>, MaxDepth> indices;
     
     int32_t pvs(const game_state& state, transposition_table& table, killer_table& ktable,
                 int depth, int real_depth, int32_t alpha, int32_t beta, int color,
@@ -19,8 +25,8 @@ class dynamic_evaluator {
                                int depth, int real_depth, int32_t beta, int color);
     int32_t nega_max_captures(const game_state& state,  
                               int real_depth, int32_t alpha, int32_t beta, int color);
-    static void sort_moves(move_list& moves, const game_state& state, uint8_t side, 
-                           const chess_move& hash_move, const killer_table& ktable, int real_depth);
+    void sort_moves(move_list &moves, const game_state &state, uint8_t side,
+                    const chess_move &hash_move, const killer_table &ktable, int real_depth);
     static int32_t eval_move(const chess_move& move, const game_state& state, bitboard pawn_capture_mask, bool is_killer);
 public:
     int32_t max_depth;

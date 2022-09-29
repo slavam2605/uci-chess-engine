@@ -38,7 +38,7 @@ namespace chess_move_generator {
         if (move::defender(move) != chess::EmptyPiece) {
             set_0(new_state.board[chess::inverse_color(state.side)][move::defender(move)], move::to(move));
         }
-        if (move::flag(move) == chess_move::move_flag::EnPassantCapture) {
+        if (move::flag(move) == move::move_flag::EnPassantCapture) {
             if (state.side == chess::White) {
                 set_0(new_state.board[chess::Black][chess::Pawn], move::to(move) - 8);
             } else {
@@ -56,7 +56,7 @@ namespace chess_move_generator {
         while (mask) {
             auto to = lsb(mask);
             set_0(mask, to);
-            chess_move move(from, to, Figure, state.get_piece(chess::inverse_color(side), to));
+            chess_move move = move::make_move(from, to, Figure, state.get_piece(chess::inverse_color(side), to));
             if constexpr (Figure == chess::King) {
                 if (!in_danger(state, state.all ^ (1ULL << from), to, side)) {
                     moves.push_back(move);
@@ -83,19 +83,19 @@ namespace chess_move_generator {
     inline void generate_figure_moves<chess::Pawn>(move_list& moves, const game_state& state, uint8_t side, bitboard pinned, uint8_t king_sq, bitboard target) = delete;
 
     inline void generate_pawn_moves(move_list& moves, const game_state& state, uint8_t side, int8_t from_shift, 
-                                    bool is_capture, bitboard mask, chess_move::move_flag flag, bitboard pinned, uint8_t king_sq) {
+                                    bool is_capture, bitboard mask, move::move_flag flag, bitboard pinned, uint8_t king_sq) {
         while (mask) {
             auto to = lsb(mask);
             set_0(mask, to);
             auto from = static_cast<uint8_t>(to + from_shift);
             auto defending_piece = is_capture ? state.get_piece(chess::inverse_color(side), to) : chess::EmptyPiece;
-            chess_move move(from, to, chess::Pawn, defending_piece, flag);
+            chess_move move = move::make_move(from, to, chess::Pawn, defending_piece, flag);
             if (!get_bit(pinned, from) || aligned(from, to, king_sq)) {
                 if (to < 8 || to > 55) {
-                    moves.push_back(chess_move(move, chess_move::move_flag::PromoteToBishop));
-                    moves.push_back(chess_move(move, chess_move::move_flag::PromoteToKnight));
-                    moves.push_back(chess_move(move, chess_move::move_flag::PromoteToQueen));
-                    moves.push_back(chess_move(move, chess_move::move_flag::PromoteToRook));
+                    moves.push_back(move::make_move(move, move::move_flag::PromoteToBishop));
+                    moves.push_back(move::make_move(move, move::move_flag::PromoteToKnight));
+                    moves.push_back(move::make_move(move, move::move_flag::PromoteToQueen));
+                    moves.push_back(move::make_move(move, move::move_flag::PromoteToRook));
                 } else {
                     moves.push_back(move);
                 }
@@ -107,33 +107,33 @@ namespace chess_move_generator {
         if (!only_captures) {
             auto short_moves = legal_move_mask::generate_short_pawn_mask(state, side);
             auto long_moves = legal_move_mask::generate_long_pawn_mask(state, side);
-            generate_pawn_moves(moves, state, side, side == chess::White ? -8 : 8, false, short_moves & target, chess_move::move_flag::Default, pinned, king_sq);
-            generate_pawn_moves(moves, state, side, side == chess::White ? -16 : 16, false, long_moves & target, chess_move::move_flag::PawnLongMove, pinned, king_sq);
+            generate_pawn_moves(moves, state, side, side == chess::White ? -8 : 8, false, short_moves & target, move::move_flag::Default, pinned, king_sq);
+            generate_pawn_moves(moves, state, side, side == chess::White ? -16 : 16, false, long_moves & target, move::move_flag::PawnLongMove, pinned, king_sq);
         }
         auto left_captures = legal_move_mask::generate_left_pawn_capture_mask(state, side, false) & target;
         auto right_captures = legal_move_mask::generate_right_pawn_capture_mask(state, side, false) & target;
-        generate_pawn_moves(moves, state, side, side == chess::White ? -7 : 9, true, left_captures, chess_move::move_flag::Default, pinned, king_sq);
-        generate_pawn_moves(moves, state, side, side == chess::White ? -9 : 7, true, right_captures, chess_move::move_flag::Default, pinned, king_sq);
+        generate_pawn_moves(moves, state, side, side == chess::White ? -7 : 9, true, left_captures, move::move_flag::Default, pinned, king_sq);
+        generate_pawn_moves(moves, state, side, side == chess::White ? -9 : 7, true, right_captures, move::move_flag::Default, pinned, king_sq);
     }
     
     inline void generate_en_passant_moves(move_list& moves, const game_state& state, uint8_t side) {
         if (state.en_passant == chess::Empty) return;
         if (side == chess::White) {
             if (state.en_passant % 8 != 7 && get_bit(state.board[chess::White][chess::Pawn], state.en_passant - 7)) {
-                chess_move move(state.en_passant - 7, state.en_passant, chess::Pawn, chess::EmptyPiece, chess_move::move_flag::EnPassantCapture);
+                chess_move move = move::make_move(state.en_passant - 7, state.en_passant, chess::Pawn, chess::EmptyPiece, move::move_flag::EnPassantCapture);
                 if (is_legal(move, state)) moves.push_back(move);
             }
             if (state.en_passant % 8 != 0 && get_bit(state.board[chess::White][chess::Pawn], state.en_passant - 9)) {
-                chess_move move(state.en_passant - 9, state.en_passant, chess::Pawn, chess::EmptyPiece, chess_move::move_flag::EnPassantCapture);
+                chess_move move = move::make_move(state.en_passant - 9, state.en_passant, chess::Pawn, chess::EmptyPiece, move::move_flag::EnPassantCapture);
                 if (is_legal(move, state)) moves.push_back(move);
             }
         } else {
             if (state.en_passant % 8 != 0 && get_bit(state.board[chess::Black][chess::Pawn], state.en_passant + 7)) {
-                chess_move move(state.en_passant + 7, state.en_passant, chess::Pawn, chess::EmptyPiece, chess_move::move_flag::EnPassantCapture);
+                chess_move move = move::make_move(state.en_passant + 7, state.en_passant, chess::Pawn, chess::EmptyPiece, move::move_flag::EnPassantCapture);
                 if (is_legal(move, state)) moves.push_back(move);
             }
             if (state.en_passant % 8 != 7 && get_bit(state.board[chess::Black][chess::Pawn], state.en_passant + 9)) {
-                chess_move move(state.en_passant + 9, state.en_passant, chess::Pawn, chess::EmptyPiece, chess_move::move_flag::EnPassantCapture);
+                chess_move move = move::make_move(state.en_passant + 9, state.en_passant, chess::Pawn, chess::EmptyPiece, move::move_flag::EnPassantCapture);
                 if (is_legal(move, state)) moves.push_back(move);
             }
         }
@@ -141,8 +141,8 @@ namespace chess_move_generator {
 
     inline void generate_castling_moves(move_list& moves, const game_state& state, uint8_t side) {
         auto index = side == chess::White ? 0 : 56; // index of the first cell in the castling row
-        auto long_flag = side == chess::White ? chess_move::move_flag::WhiteLongCastling : chess_move::move_flag::BlackLongCastling;
-        auto short_flag = side == chess::White ? chess_move::move_flag::WhiteShortCastling : chess_move::move_flag::BlackShortCastling;
+        auto long_flag = side == chess::White ? move::move_flag::WhiteLongCastling : move::move_flag::BlackLongCastling;
+        auto short_flag = side == chess::White ? move::move_flag::WhiteShortCastling : move::move_flag::BlackShortCastling;
         if (state.castling[side][chess::Queen] &&   // castling available => rook and king are on their positions 
             get_bit(state.empty, index + 1) &&      // |
             get_bit(state.empty, index + 2) &&      // | no figures between king and rook
@@ -150,7 +150,7 @@ namespace chess_move_generator {
             !in_danger(state, state.all, index + 2, side) &&   // king's target cell is not under attack
             !in_danger(state, state.all, index + 3, side) &&   // king's passing cell is not under attack
             !in_danger(state, state.all, index + 4, side)) {   // king itself is not under attack
-            moves.push_back(chess_move(index + 4, index + 2, chess::King, chess::EmptyPiece, long_flag));
+            moves.push_back(move::make_move(index + 4, index + 2, chess::King, chess::EmptyPiece, long_flag));
         }
         if (state.castling[side][chess::King] &&    // castling available => rook and king are on their positions
             get_bit(state.empty, index + 5) &&      // |
@@ -158,7 +158,7 @@ namespace chess_move_generator {
             !in_danger(state, state.all, index + 4, side) &&   // king itself is not under attack
             !in_danger(state, state.all, index + 5, side) &&   // king's passing cell is not under attack
             !in_danger(state, state.all, index + 6, side)) {   // king's target cell is not under attack
-            moves.push_back(chess_move(index + 4, index + 6, chess::King, chess::EmptyPiece, short_flag));
+            moves.push_back(move::make_move(index + 4, index + 6, chess::King, chess::EmptyPiece, short_flag));
         }
     }
     

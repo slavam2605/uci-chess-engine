@@ -14,7 +14,7 @@ string find_best_move(const string& fen, int depth) {
     auto move = evaluator.find_best_move(state, depth);
     cout << "find_best_move: " << chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count() << " ms" << endl;
     stringstream ss;
-    ss << move;
+    ss << move::to_string(move);
     return ss.str();
 }
 

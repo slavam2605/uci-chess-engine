@@ -20,6 +20,6 @@ void debug_tools::print_values_for_moves(const string& fen) {
         new_state.apply_move(move);
         auto value = evaluator.pvs(new_state, table, ktable, 6, 1, -1000000000, 1000000000,
                                    new_state.side == chess::White ? 1 : -1);
-        cout << move << " => " << /*static_evaluator::evaluate(new_state)*/value << " cp" << endl;
+        cout << move::to_string(move) << " => " << /*static_evaluator::evaluate(new_state)*/value << " cp" << endl;
     }
 }
