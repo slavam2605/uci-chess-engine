@@ -1,6 +1,7 @@
 #include "../engine/chess_move_generator.h"
 #include "../engine/dynamic_evaluator.h"
 #include "../engine/static_evaluator.h"
+#include "../engine/move_masks.h"
 #include "perft_utils.h"
 #include <chrono>
 #include <utility>
@@ -91,28 +92,42 @@ void perft_test(int depth) {
 }
 
 int main() {
-//    vector<test_case> test_cases = {
-//            {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", {1, 20, 400, 8902, 197281, 4865609}},
-//            {"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 0 1", {1, 44, 1486, 62379, 2103487, 89941194}},
-//            {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", {1, 48, 2039, 97862, 4085603, 193690690}},
-//            {"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", {1, 14, 191, 2812, 43238, 674624}},
-//            {"r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1", {1, 6, 264, 9467, 422333, 15833292}},
-//            {"r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10", {1, 46, 2079, 89890, 3894594, 164075551}},
-//    };
-//    run_tests(test_cases);
-//    return 0;
-
-//    performance_test(run_performance_work);
-    performance_test([](){ perft_test(5); });
-//    performance_test([](){ perft_test(6); }, 1, 0, 1);
+    vector<test_case> test_cases = {
+            {"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", {1, 20, 400, 8902, 197281, 4865609}},
+            {"rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 0 1", {1, 44, 1486, 62379, 2103487, 89941194}},
+            {"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", {1, 48, 2039, 97862, 4085603, 193690690}},
+            {"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1", {1, 14, 191, 2812, 43238, 674624}},
+            {"r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1", {1, 6, 264, 9467, 422333, 15833292}},
+            {"r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10", {1, 46, 2079, 89890, 3894594, 164075551}},
+            {"rnbqkb1r/ppp2ppp/3pp3/8/PPPPPPP1/5n1P/8/RNBQKBNR w KQkq - 0 1", {1, 4, 124, 4061, 126842, 4267678}},
+    };
+    run_tests(test_cases);
+    performance_test([](){ perft_test(5); }); // 744 ms -> 488 ms -> 477 ms
+    performance_test([]() { // 840 ms -> 530 ms -> 508 ms -> 472 ms
+        game_state state("r1b2rk1/1pp5/p2bp2p/3nNp1q/P1PP2p1/3B4/1P2QPP1/R1B1R1K1 b - - 0 18");
+        dynamic_evaluator evaluator;
+        evaluator.find_best_move(state, 8);
+    });
     return 0;
 
-    game_state state("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 0 1");
+    size_t total = 0;
+    for (const auto& [move, count]: perft_utils::perft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 3)) {
+        cout << move::to_string(move) << ": " << count << endl;
+        total += count;
+    }
+    cout << "Total: " << total << endl;
+    return 0;
+
+    performance_test([](){ perft_test(6); }, 1, 0, 1);
+    return 0;
+
+    game_state state("r1b2rk1/1pp5/p2bp2p/3nNp1q/P1PP2p1/3B4/1P2QPP1/R1B1R1K1 b - - 0 18");
     dynamic_evaluator evaluator;
     auto start = chrono::steady_clock::now();
-    evaluator.find_best_move(state, 9);
+    auto move = evaluator.find_best_move(state, 7);
     auto diff = chrono::steady_clock::now() - start;
     cout << chrono::duration_cast<chrono::milliseconds>(diff).count() << " ms" << endl;
+    cout << "Best move: " << move::to_string(move) << endl;
     cout << "Max depth: " << evaluator.max_depth << endl;
     cout << "Total nodes in main search: " << evaluator.main_search_nodes << endl;
     cout << "Total nodes in zero window search: " << evaluator.zero_window_nodes << endl;
